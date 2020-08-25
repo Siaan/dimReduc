@@ -1,4 +1,6 @@
 #! /usr/bin/env python
+import sys
+from pandas.core.common import flatten
 import numpy as np
 from filterpy.kalman import KalmanFilter
 import matplotlib.pyplot as plt
@@ -39,15 +41,27 @@ def preprocess(num_measured, measured_var, covar, process_model, white_noise_var
     :param U: Control input
     :return: all the variables above in np.array form
     '''
-    dim_z = num_measured
-    X = np.array(measured_var)
-    P = np.array(covar)
-    A = np.array(process_model)
+
+    dim_z = int(num_measured)
+    X = np.array([measured_var])
+    #fix X 
+    X = np.array([[10],[4.5]])
+    P = np.array(eval(covar))
+    print(P)
+    print('===========')
+    print(type(eval(covar)))
+    A = np.array(eval(process_model))
     Q = Q_discrete_white_noise(dim=X.shape[0], dt=dt, var=white_noise_var) #dim = shape of X?
     B = B
     U = U
-    R = np.array([[sensor_covar]])
-    H = np.array([measurement_function])
+    R = np.array([[int(sensor_covar)]])
+    H = np.array([eval(measurement_function)])
+    print('x', X)
+    print(P)
+    print(A)
+    print(R)
+    print('h', H)
+    print(type(A))
     return (dim_z, X, P, A, Q, dt, R, H, B, U)
 
 def create_kf_and_assign_predict_update(dim_z, X, P, A, Q, dt, R, H, B, U):
@@ -59,6 +73,7 @@ def create_kf_and_assign_predict_update(dim_z, X, P, A, Q, dt, R, H, B, U):
     kf.x = X
     kf.P = P
     kf.F = A
+    print('=======================')
     kf.Q = Q
     kf.B = B
     kf.U = U
@@ -128,20 +143,39 @@ if __name__ == '__main__':
     configstore = sys.argv[2]
     input_file  = sys.argv[3]
     output_loc  = sys.argv[4]
-
+    
+    print(input_file)
+    print('==========INPUT FILE====================')
+    
     dim_of_measurements, measured_var, covar, process_model, \
     white_noise_var, dt, sensor_covar, \
     measurement_function = process_files.process_parameters(configname)
 
     zedd = process_files.process_data_file(input_file)
+    print('Fix input file')
+    print(zedd)
+    print('original input')
 
-    xs, cv, kf = Kalman.run_kf(data=zedd, dim_of_measurements=dim_of_measurements, measured_var=(measured_var), covar=(covar),
+    xs, cv, kf = run_kf(data=zedd, dim_of_measurements=dim_of_measurements, measured_var=(measured_var), covar=(covar),
                                process_model=(process_model), white_noise_var=white_noise_var, dt=dt, sensor_covar=(sensor_covar),
                                measurement_function=(measurement_function))
 
-    x, p = Kalman.run_smoother(kf, xs, cv)
+    x, p = run_smoother(kf, xs, cv)
+    
 
-    process_files.process_output(x,p, output_loc)
+    final_x = []
+    for i in x:
+        final_x.append(list(flatten(i)))
+    
+    print(final_x)
+    print('type: ', type(final_x))
+    print('FINAL_X', final_x[0])
+    print(final_x[0][0])
+    print(type(p))
+   # print('==============+P============', p[0])
+
+
+    process_files.process_output(final_x,p, output_loc)
 
 
 

@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 import numpy as np
 import math
+import pandas as pd
 import sys
 import os
 import yaml
@@ -11,7 +12,6 @@ import clean_KF as Kalman
 
 def process_parameters(configname):
     configparams = yaml.load(open(configname, 'r'), Loader=yaml.FullLoader)
-    print(configparams)
     try:
         dim_of_measurements = configparams["dim_of_measurements"]
         measured_var = configparams["measured_var"]
@@ -29,35 +29,25 @@ def process_parameters(configname):
     return dim_of_measurements, measured_var, covar, process_model, white_noise_var, dt, sensor_covar, measurement_function
 
 def process_data_file(dataname):
-    df = pandas.read_csv(dataname)
-    zedd = np.array(df)
+    df = pd.read_csv(dataname)
+    zedd = df.Observations.to_numpy()
 
     return zedd
 
 def process_output(x,p, output_loc):
-    output_df = pd.DataFrame()
-    output_df["X"] = x
-    output_df["P"] = p
-    output_df.to_csv(output_loc, index=False, columns=['X', 'P'])
+    output = []
+    for i in range(len(x)):
+        output.append({'x': np.array(x[i][0]), 'c': p[i]})
+
+    import os
+    df = pd.DataFrame().append(output)
+    df.to_csv(os.path.join(output_loc,r'output.csv'), index=False, columns=['x', 'c'])
 
 
 
 if __name__ == '__main__':
-    configname = sys.argv[1]
-    #configname =  'r' + "'" + configname+ "'"
-    #print(configname)
-    configparams = yaml.load(open(configname, 'r'), Loader=yaml.FullLoader)
-    #print(configparams)
+    print('No Errors')
 
-    dim_of_measurements = configparams["dim_of_measurements"]
-    measured_var = configparams["measured_var"]
-
-    m_measured_var = (measured_var)
-    x = np.array(m_measured_var)
-    print(type(x))
-
-
-    #process_parameters(configname)
 
 
 
